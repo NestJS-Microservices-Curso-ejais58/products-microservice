@@ -7,7 +7,7 @@ import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit {
-
+  
   private readonly logger = new Logger('productService')
 
   onModuleInit() {
@@ -80,5 +80,25 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
       where: {id},
       data: {available: false}
     })
+  }
+
+  async validateProducts(ids: number[]) {
+    //elimina id repetidos
+    ids = Array.from(new Set(ids));
+
+    const products = await this.product.findMany({
+      where: {
+        id: {in: ids}
+      }
+    });
+
+    if (products.length !== ids.length) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'some products were not found'
+      })
+    }
+
+    return products;
   }
 }
